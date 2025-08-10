@@ -6,8 +6,8 @@ import streamlit as st
 import folium
 from streamlit_folium import st_folium
 
-st.set_page_config(page_title="Windmill Component Jobs — Appalachia", layout="wide")
-st.title("Windmill Component Jobs — Appalachia")
+st.set_page_config(page_title="Windmill Component Jobs — North Central Appalachia", layout="wide")
+st.title("Windmill Component Jobs — North Central Appalachia")
 
 st.markdown(
     "This app maps estimated jobs by NAICS industry in Appalachian counties. "
@@ -26,7 +26,10 @@ if not naics_cols:
     st.stop()
 
 # --- UI: which NAICS to map
-choice = st.selectbox("Choose an industry (NAICS)", naics_cols, index=0)
+
+left, right = st.columns([1, 4])  # left is 1/5 width
+with left:
+    choice = st.selectbox("Choose an industry (NAICS)", naics_cols, index=0)
 
 # --- Bins/colors (same logic as your Folium snippet)
 breaks = [-np.inf, 0, 50, 150, 250, 350, np.inf]
