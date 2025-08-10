@@ -25,11 +25,29 @@ if not naics_cols:
     st.error("No NAICS columns found in the GeoJSON. Check your data prep.")
     st.stop()
 
-# --- UI: which NAICS to map
+# --- Human-friendly NAICS names (define this BEFORE using it)
+naics_names = {
+    "NAICS 326": "Plastics & Rubber Products Manufacturing",
+    "NAICS 327": "Nonmetallic Mineral Product Manufacturing",
+    "NAICS 331": "Primary Metal Manufacturing",
+    "NAICS 332": "Fabricated Metal Product Manufacturing",
+    "NAICS 333": "Machinery Manufacturing",
+    "NAICS 335": "Electrical Equipment, Appliance & Component Manufacturing",
+}
 
-left, right = st.columns([1, 4])  # left is 1/5 width
-with left:
-    choice = st.selectbox("Choose an industry (NAICS)", naics_cols, index=0)
+# Only include codes that are in your data and have names
+codes_for_dropdown = [c for c in naics_cols if c in naics_names]
+
+# --- Wider dropdown: put it in a wide column
+wide, narrow = st.columns([0.65, 1])  # adjust as you like
+with wide:
+    choice_code = st.selectbox(
+        "Choose industry",
+        options=codes_for_dropdown,
+        format_func=lambda c: f"{c} — {naics_names.get(c, c)}",
+        index=0,
+        key="industry",  # unique key just in case
+    )
 
 # --- Bins/colors (same logic as your Folium snippet)
 breaks = [-np.inf, 0, 50, 150, 250, 350, np.inf]
@@ -58,7 +76,7 @@ def bin_value(v):
 
 # --- Add bin + color to each feature so Folium can style it
 for feat in geojson["features"]:
-    val = feat["properties"].get(choice, None)
+    val = feat["properties"].get(choice_code, None)  # use choice_code
     label = bin_value(val)
     feat["properties"]["job_bin"] = label
     feat["properties"]["color"] = colors.get(label, "#ffffff")
@@ -75,17 +93,18 @@ folium.GeoJson(
         "fillOpacity": 0.7,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["County", "State", choice, "job_bin"],
+        fields=["County", "State", choice_code, "job_bin"],  # use choice_code
         aliases=["County:", "State:", "Jobs:", "Category:"],
         localize=True
     ),
 ).add_to(m)
 
-# --- Simple legend
+# --- Simple legend (friendly title)
+legend_title = f"{naics_names.get(choice_code, choice_code)} — Jobs"
 legend_html = f'''
 <div style="position: fixed; bottom: 30px; left: 30px; border:2px solid grey; z-index:9999;
             font-size:14px; background-color:white; padding: 10px;">
-  <b>{choice} — Jobs</b><br>
+  <b>{legend_title}</b><br>
   {''.join(f'<i style="background:{c};width:18px;height:18px;float:left;margin-right:8px;"></i>{lbl}<br>' for lbl,c in colors.items())}
 </div>
 '''
